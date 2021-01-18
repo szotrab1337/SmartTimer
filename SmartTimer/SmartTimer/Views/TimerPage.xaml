@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SmartTimer.Views.TimerPage"
+             xmlns:vm="clr-namespace:SmartTimer.ViewModels"
+             BackgroundColor="#121212"
+             Title="Minutnik">
+    <!--<ContentPage.Resources>
+        <Style x:Key="buttonStyle" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Background" Value="#3399ff"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#cc00cc"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </ContentPage.Resources>-->
+    <ContentPage.BindingContext>
+        <vm:TimerViewModel />
+    </ContentPage.BindingContext>
+    
+    <ContentPage.Content>
+        <StackLayout Margin="20,20,20,20">
+
+            <StackLayout VerticalOptions="FillAndExpand" IsVisible="{Binding FirstStepIsVisible}">
+                <StackLayout VerticalOptions="CenterAndExpand" Spacing="90">
+                    <StackLayout Spacing="10">
+                        <Label Text="Całkowity czas" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                        <TimePicker HorizontalOptions="CenterAndExpand" FontSize="45" Opacity="0.87"  Time="{Binding MainPickedDuration}"/>
+                    </StackLayout>
+
+                    <StackLayout Spacing="10">
+                        <Label Text="Przystanek po" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                        <TimePicker HorizontalOptions="CenterAndExpand" FontSize="45" Opacity="0.87" Time="{Binding SecondaryPickedDuration}"/>
+                    </StackLayout>
+                </StackLayout>
+
+                <StackLayout VerticalOptions="EndAndExpand">
+                    <StackLayout.Resources>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#272727"/>
+                            <Style.Triggers>
+                                <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#272727"/>
+                                    <Setter Property="TextColor" Value="#666666"/>
+                                </Trigger>
+                                <Trigger TargetType="Button" Property="IsEnabled" Value="True">
+                                    <Setter Property="Background" Value="#272727"/>
+                                    <Setter Property="TextColor" Value="White"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackLayout.Resources>
+                    <Button BackgroundColor="#272727" Text="Zatwierdź" Grid.Column="2" CornerRadius="30" Command="{Binding ApproveCommand}" IsEnabled="{Binding ApproveIsEnabled}" Margin="30,0,30,0"/>
+                </StackLayout>
+            </StackLayout>
+
+            <StackLayout VerticalOptions="FillAndExpand" IsVisible="{Binding SecondStepIsVisible}">
+                <StackLayout VerticalOptions="CenterAndExpand" Spacing="90">
+                    <StackLayout Spacing="10">
+                        <Label Text="Do zakończenia" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                        <Label Text="{Binding MainDuration}" HorizontalOptions="Center" FontSize="45" TextColor="White" Opacity="0.87"/>
+                        <ProgressBar Progress="{Binding MainProgress}" ProgressColor="#FF4081" Opacity="0.60" Margin="0,20,0,0"/>
+                    </StackLayout>
+
+                    <StackLayout Spacing="10" IsVisible="{Binding SecondaryDurationIsVisible}">
+                        <Label Text="Do przystanku" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                        <Label Text="{Binding SecondaryDuration}" HorizontalOptions="Center" FontSize="45" TextColor="White" Opacity="0.87"/>
+                        <ProgressBar Progress="{Binding SecondaryProgress}" ProgressColor="#FF4081" Opacity="0.60" Margin="0,20,0,0"/>
+                    </StackLayout>
+                </StackLayout>
+
+                <StackLayout VerticalOptions="EndAndExpand" IsVisible="{Binding MainButtonsIsVisible}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button BackgroundColor="#4d0000" FontAttributes="Bold" Text="Anuluj" Grid.Column="0" CornerRadius="30" Command="{Binding CancelCommand}"/>
+                        <Button IsVisible="{Binding StopButtonIsVisible}" BackgroundColor="#272727" Text="Zatrzymaj" Grid.Column="2" CornerRadius="30" Command="{Binding StopCommand}"/>
+                        <Button IsVisible="{Binding ResumeButtonIsVisible}" BackgroundColor="#272727" Text="Wznów" Grid.Column="2" CornerRadius="30" Command="{Binding ResumeCommand}"/>
+                    </Grid>
+                </StackLayout>
+
+                <StackLayout VerticalOptions="EndAndExpand" IsVisible="{Binding EndButtonIsVisible}">
+                    <Button BackgroundColor="#272727" Text="Zakończ" Grid.Column="0" CornerRadius="30" Grid.ColumnSpan="2" Command="{Binding EndCommand}" Margin="30,0,30,0"/>
+                </StackLayout>
+                
+            </StackLayout>
+            
+        </StackLayout>
+    </ContentPage.Content>
+
+</ContentPage>
