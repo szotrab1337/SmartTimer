@@ -15,12 +15,9 @@ namespace SmartTimer.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class TimerPage : ContentPage
     {
-        TimerViewModel viewModel;
         public TimerPage()
         {
             InitializeComponent();
-
-            this.BindingContext = viewModel = new TimerViewModel();
         }
     }
 }

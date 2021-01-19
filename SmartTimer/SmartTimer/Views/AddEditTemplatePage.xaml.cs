@@ -1,4 +1,5 @@
-﻿using SmartTimer.ViewModels;
+﻿using SmartTimer.Models;
+using SmartTimer.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +12,14 @@ using Xamarin.Forms.Xaml;
 namespace SmartTimer.Views
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
-    public partial class TemplatesPage : ContentPage
+    public partial class AddEditTemplatePage : ContentPage
     {
-        TemplatesViewModel viewModel;
-        public TemplatesPage()
+        AddEditTemplateViewModel viewModel;
+        public AddEditTemplatePage(Template Template)
         {
             InitializeComponent();
 
-            this.BindingContext = viewModel = new TemplatesViewModel(Navigation);
+            this.BindingContext = viewModel = new AddEditTemplateViewModel(Navigation, Template);
         }
     }
 }

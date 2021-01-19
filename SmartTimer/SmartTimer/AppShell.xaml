@@ -32,7 +32,7 @@
     <TabBar>
         <ShellContent Title="Szablony" Icon="icon_list.png" Route="AboutPage" ContentTemplate="{DataTemplate local:TemplatesPage}" />
         <ShellContent Title="Minutnik" Icon="icon_timer.png" ContentTemplate="{DataTemplate local:TimerPage}" x:Name="timerPage"/>
-        <ShellContent Title="Ustawienia" Icon="icon_settings.png" ContentTemplate="{DataTemplate local:SettingsPage}" />
+        <!--<ShellContent Title="Ustawienia" Icon="icon_settings.png" ContentTemplate="{DataTemplate local:SettingsPage}" />-->
     </TabBar>
 
     <!--

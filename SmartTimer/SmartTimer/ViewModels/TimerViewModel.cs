@@ -3,7 +3,6 @@ using Android.Content;
 using Android.Media;
 using Android.OS;
 using Plugin.LocalNotification;
-using Plugin.LocalNotifications;
 using SmartTimer.Models;
 using System;
 using System.Collections.Generic;
@@ -50,20 +49,26 @@ namespace SmartTimer.ViewModels
 
             #region Messenger
 
-            MessagingCenter.Subscribe<Xamarin.Forms.Application, int>(Xamarin.Forms.Application.Current, "ElapsedSeconds", (sender, ElapsedSeconds) =>
-            {
-                UpdateUI(ElapsedSeconds);
-            });
-            
-            MessagingCenter.Subscribe<Xamarin.Forms.Application>(Xamarin.Forms.Application.Current, "SecondaryTimerEnded", (sender) =>
+            MessagingCenter.Subscribe<App>(this, "SecondaryTimerEnded", (sender) =>
             {
                 EndSecondaryTimer();
             });
-            
-            MessagingCenter.Subscribe<Xamarin.Forms.Application>(Xamarin.Forms.Application.Current, "MainTimerEnded", (sender) =>
+
+            MessagingCenter.Subscribe<App>(this, "MainTimerEnded", (sender) =>
             {
+                TimerHelper = false;
                 ChangeButtonsVisibility();
                 EndMainTimer();
+            });
+
+            MessagingCenter.Subscribe<TemplatesViewModel, Template>(this, "NewTimerFromTemplate", (sender, Template) =>
+            {
+                TimerFromTemplate(Template);
+            });
+
+            MessagingCenter.Subscribe<App>(this, "RefreshTimer", (sender) =>
+            {
+                RefreshTimer();
             });
 
             #endregion
@@ -86,15 +91,22 @@ namespace SmartTimer.ViewModels
             get { return _MainDuration; }
             set { _MainDuration = value; OnPropertyChanged("MainDuration"); }
         }
-        private string _MainDuration;  
+        private string _MainDuration;
         
+        public int ElapsedSeconds
+        {
+            get { return _ElapsedSeconds; }
+            set { _ElapsedSeconds = value; OnPropertyChanged("ElapsedSeconds"); }
+        }
+        private int _ElapsedSeconds;
+
         public string SecondaryDuration
         {
             get { return _SecondaryDuration; }
             set { _SecondaryDuration = value; OnPropertyChanged("SecondaryDuration"); }
         }
-        private string _SecondaryDuration;  
-        
+        private string _SecondaryDuration;
+
         public TimeSpan MainPickedDuration
         {
             get { return _MainPickedDuration; }
@@ -102,89 +114,110 @@ namespace SmartTimer.ViewModels
         }
         private TimeSpan _MainPickedDuration;
         
+        public DateTime MainTimerEnd
+        {
+            get { return _MainTimerEnd; }
+            set { _MainTimerEnd = value; OnPropertyChanged("MainTimerEnd"); }
+        }
+        private DateTime _MainTimerEnd;
+        
+        public DateTime PauseDateTime
+        {
+            get { return _PauseDateTime; }
+            set { _PauseDateTime = value; OnPropertyChanged("PauseDateTime"); }
+        }
+        private DateTime _PauseDateTime;
+
         public TimeSpan SecondaryPickedDuration
         {
             get { return _SecondaryPickedDuration; }
             set { _SecondaryPickedDuration = value; OnPropertyChanged("SecondaryPickedDuration"); ValidateApproveButton(); }
         }
         private TimeSpan _SecondaryPickedDuration;
-        
+
         public bool FirstStepIsVisible
         {
             get { return _FirstStepIsVisible; }
             set { _FirstStepIsVisible = value; OnPropertyChanged("FirstStepIsVisible"); }
         }
         private bool _FirstStepIsVisible;
-        
+
         public bool SecondStepIsVisible
         {
             get { return _SecondStepIsVisible; }
             set { _SecondStepIsVisible = value; OnPropertyChanged("SecondStepIsVisible"); }
         }
         private bool _SecondStepIsVisible;
-        
+
         public bool StopButtonIsVisible
         {
             get { return _StopButtonIsVisible; }
             set { _StopButtonIsVisible = value; OnPropertyChanged("StopButtonIsVisible"); }
         }
         private bool _StopButtonIsVisible;
-        
+
         public bool ResumeButtonIsVisible
         {
             get { return _ResumeButtonIsVisible; }
             set { _ResumeButtonIsVisible = value; OnPropertyChanged("ResumeButtonIsVisible"); }
         }
         private bool _ResumeButtonIsVisible;
-        
+
         public bool SecondaryDurationIsVisible
         {
             get { return _SecondaryDurationIsVisible; }
             set { _SecondaryDurationIsVisible = value; OnPropertyChanged("SecondaryDurationIsVisible"); }
         }
         private bool _SecondaryDurationIsVisible;
-        
+
         public double MainProgress
         {
             get { return _MainProgress; }
             set { _MainProgress = value; OnPropertyChanged("MainProgress"); }
         }
         private double _MainProgress;
-        
+
         public double SecondaryProgress
         {
             get { return _SecondaryProgress; }
             set { _SecondaryProgress = value; OnPropertyChanged("SecondaryProgress"); }
         }
         private double _SecondaryProgress;
-        
+
         public bool ApproveIsEnabled
         {
             get { return _ApproveIsEnabled; }
             set { _ApproveIsEnabled = value; OnPropertyChanged("ApproveIsEnabled"); }
         }
         private bool _ApproveIsEnabled;
-        
+
         public bool MainButtonsIsVisible
         {
             get { return _MainButtonsIsVisible; }
             set { _MainButtonsIsVisible = value; OnPropertyChanged("MainButtonsIsVisible"); }
         }
         private bool _MainButtonsIsVisible;
-        
+
         public bool EndButtonIsVisible
         {
             get { return _EndButtonIsVisible; }
             set { _EndButtonIsVisible = value; OnPropertyChanged("EndButtonIsVisible"); }
         }
-        private bool _EndButtonIsVisible;       
+        private bool _EndButtonIsVisible;
         
+        public bool TimerHelper
+        {
+            get { return _TimerHelper; }
+            set { _TimerHelper = value; OnPropertyChanged("TimerHelper"); }
+        }
+        private bool _TimerHelper;
+
         public bool SecondaryNotificationSend
         {
             get { return _SecondaryNotificationSend; }
             set { _SecondaryNotificationSend = value; OnPropertyChanged("SecondaryNotificationSend"); }
         }
-        private bool _SecondaryNotificationSend;          
+        private bool _SecondaryNotificationSend;
 
         public Ringtone Ringtone { get; set; }
         public Vibrator Vibrator { get; set; }
@@ -195,183 +228,369 @@ namespace SmartTimer.ViewModels
 
         public void ApproveAction()
         {
-            ChangeVisibility();
-            ValidateSecondaryDurationVisibility();
-            TimerStart();
+            try
+            {
+                ElapsedSeconds = 0;
+                SetTimer();
+                ChangeVisibility();
+                ValidateSecondaryDurationVisibility();
+                SetAlarms();
+
+                MainTimerEnd = DateTime.Now.Add(TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds));
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
-        
+
         public async void CancelAction()
         {
-            var result = await UserDialogs.Instance.ConfirmAsync(new ConfirmConfig
+            try
             {
-                Message = "Czy na pewno chcesz anulować odliczanie?",
-                OkText = "Tak",
-                CancelText = "Nie",
-                Title = "Potwierdzenie"
-            });
+                var result = await UserDialogs.Instance.ConfirmAsync(new ConfirmConfig
+                {
+                    Message = "Czy na pewno chcesz anulować odliczanie?",
+                    OkText = "Tak",
+                    CancelText = "Nie",
+                    Title = "Potwierdzenie"
+                });
 
-            if (!result)
-                return;
+                if (!result)
+                    return;
 
-            StopButtonIsVisible = true;
-            ResumeButtonIsVisible = false;
+                StopButtonIsVisible = true;
+                ResumeButtonIsVisible = false;
+                TimerHelper = false;
 
-            MessagingCenter.Instance.Send(this, "StopTimer");            
+                MessagingCenter.Instance.Send(this, "CancelAlarms");
 
-            ChangeVisibility();
+                ChangeVisibility();
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void StopAction()
         {
-            ChangeStopResumeButtonsVisibility();
-            MessagingCenter.Instance.Send(this, "StopTimer");
-        }
+            try
+            {
+                TimerHelper = false;
+                ChangeStopResumeButtonsVisibility();
+                MessagingCenter.Instance.Send(this, "CancelAlarms");
+
+                PauseDateTime = DateTime.Now;
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
+}
 
         public void ResumeAction()
         {
-            ChangeStopResumeButtonsVisibility();
-            TimerResume();
-        }
-
-        public void TimerStart()
-        {
-            MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
-
-            if (SecondaryDurationIsVisible)
+            try
             {
-                SecondaryDuration = TimeSpan.FromSeconds(SecondaryPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
-                SecondaryProgress = 0;
+                SetTimer();
+                ChangeStopResumeButtonsVisibility();
+                AlarmsResume();
+
+                MainTimerEnd = MainTimerEnd.AddSeconds((DateTime.Now - PauseDateTime).TotalSeconds);
             }
-
-            MainProgress = 0;
-
-            Duration Duration = new Duration
+            catch (Exception ex)
             {
-                MainDuration = MainPickedDuration.TotalSeconds,
-                SecondaryDuration = SecondaryPickedDuration.TotalSeconds,
-                Single = SecondaryDurationIsVisible ? false : true
-            };
-
-            MessagingCenter.Send(this, "TurnOnTimer", Duration);
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
-        public void TimerResume()
+        public void TimerFromTemplate(Template Template)
         {
-            Duration Duration = new Duration
+            try
             {
-                MainDuration = MainPickedDuration.TotalSeconds,
-                SecondaryDuration = SecondaryPickedDuration.TotalSeconds,
-                Single = SecondaryDurationIsVisible ? false : true
-            };
+                MainPickedDuration = TimeSpan.FromSeconds(Template.FirstStepDurationSec);
+                SecondaryPickedDuration = TimeSpan.FromSeconds(Template.SecondStepDurationSec);
 
-            MessagingCenter.Send(this, "ResumeTimer", Duration);
+                ApproveAction();
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
+        }
+
+        public void SetAlarms()
+        {
+            try
+            {
+                MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
+
+                if (SecondaryDurationIsVisible)
+                {
+                    SecondaryDuration = TimeSpan.FromSeconds(SecondaryPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
+                    SecondaryProgress = 0;
+                }
+
+                MainProgress = 0;
+
+                Duration Duration = new Duration
+                {
+                    MainDuration = MainPickedDuration.TotalSeconds,
+                    SecondaryDuration = SecondaryPickedDuration.TotalSeconds,
+                    Single = SecondaryDurationIsVisible ? false : true
+                };
+
+                MessagingCenter.Send(this, "SetAlarms", Duration);
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
+        }
+
+        public void AlarmsResume()
+        {
+            try
+            {
+                Duration Duration = new Duration
+                {
+                    MainDuration = MainPickedDuration.TotalSeconds - ElapsedSeconds,
+                    SecondaryDuration = SecondaryPickedDuration.TotalSeconds - ElapsedSeconds,
+                    Single = SecondaryDurationIsVisible ? false : true
+                };
+
+                MessagingCenter.Send(this, "SetAlarms", Duration);
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void EndMainTimer()
         {
-            MainDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
-            MainProgress = 1;
-
-            NotificationRequest Notification = new NotificationRequest
+            try
             {
-                NotificationId = 1,
-                Title = "Koniec",
-                Description = "Odliczanie zakończone, możesz wyłączyć Smart Timer",
-            };
-            MessagingCenter.Instance.Send(this, "NewNotification", Notification);
+                MainDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
+                MainProgress = 1;
 
-            Notifications();
+                NotificationRequest Notification = new NotificationRequest
+                {
+                    NotificationId = 1,
+                    Title = "Koniec",
+                    Description = "Odliczanie zakończone, możesz wyłączyć Smart Timer",
+                };
+                MessagingCenter.Instance.Send(this, "NewNotification", Notification);
+
+                Notifications();
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void EndSecondaryTimer()
         {
-            SecondaryDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
-            SecondaryProgress = 1;
-
-            NotificationRequest Notification = new NotificationRequest
+            try
             {
-                NotificationId = 2,
-                Title = "Przystanek",
-                Description = "Odliczanie do przystanku zakończone",
-            };
-            MessagingCenter.Instance.Send(this, "NewNotification", Notification);
+                SecondaryDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
+                SecondaryProgress = 1;
 
-            //Vibration.Vibrate(500);
-            Vibration.Vibrate(5000);
-        }
+                NotificationRequest Notification = new NotificationRequest
+                {
+                    NotificationId = 2,
+                    Title = "Przystanek",
+                    Description = "Odliczanie do przystanku zakończone",
+                };
+                MessagingCenter.Instance.Send(this, "NewNotification", Notification);
+
+                Vibration.Vibrate(5000);
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
+}
 
         public void Notifications()
         {
-            var currentContext = Android.App.Application.Context;
-            var alarmUri = RingtoneManager.GetDefaultUri(RingtoneType.Alarm);
-            Ringtone = RingtoneManager.GetRingtone(currentContext.ApplicationContext, alarmUri);
-            Ringtone.Play();
+            try
+            {
+                var currentContext = Android.App.Application.Context;
+                var alarmUri = RingtoneManager.GetDefaultUri(RingtoneType.Alarm);
+                Ringtone = RingtoneManager.GetRingtone(currentContext.ApplicationContext, alarmUri);
+                Ringtone.Play();
 
-            long[] pattern = { 0, 1500, 2000 };
-            Vibrator = Vibrator.FromContext(currentContext);
-            Vibrator.Vibrate(pattern, 0);
+                long[] pattern = { 0, 1500, 2000 };
+                Vibrator = Vibrator.FromContext(currentContext);
+                Vibrator.Vibrate(pattern, 0);
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void EndAction()
         {
-            Vibrator.Cancel();
-            Ringtone.Stop();
-            Ringtone.Dispose();
+            try
+            {
+                Vibrator.Cancel();
+                Ringtone.Stop();
+                Ringtone.Dispose();
 
-            ChangeButtonsVisibility();
-            ChangeVisibility();
+                ChangeButtonsVisibility();
+                ChangeVisibility();
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void ChangeButtonsVisibility()
         {
-            MainButtonsIsVisible = !MainButtonsIsVisible;
-            EndButtonIsVisible = !EndButtonIsVisible;
+            try
+            {
+                MainButtonsIsVisible = !MainButtonsIsVisible;
+                EndButtonIsVisible = !EndButtonIsVisible;
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void ChangeStopResumeButtonsVisibility()
         {
-            StopButtonIsVisible = !StopButtonIsVisible;
-            ResumeButtonIsVisible = !ResumeButtonIsVisible;
+            try
+            {
+                StopButtonIsVisible = !StopButtonIsVisible;
+                ResumeButtonIsVisible = !ResumeButtonIsVisible;
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void UpdateUI(int ElapsedSeconds)
         {
-            MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds - ElapsedSeconds).ToString(@"hh\:mm\:ss");
-            MainProgress = ElapsedSeconds / MainPickedDuration.TotalSeconds;
-
-            if (SecondaryDurationIsVisible && ElapsedSeconds < SecondaryPickedDuration.TotalSeconds)
+            try
             {
-                SecondaryDuration = TimeSpan.FromSeconds(SecondaryPickedDuration.TotalSeconds - ElapsedSeconds).ToString(@"hh\:mm\:ss");
-                SecondaryProgress = ElapsedSeconds / SecondaryPickedDuration.TotalSeconds;
+                MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds - ElapsedSeconds).ToString(@"hh\:mm\:ss");
+                MainProgress = ElapsedSeconds / MainPickedDuration.TotalSeconds;
+
+                if (SecondaryDurationIsVisible && ElapsedSeconds < SecondaryPickedDuration.TotalSeconds)
+                {
+                    SecondaryDuration = TimeSpan.FromSeconds(SecondaryPickedDuration.TotalSeconds - ElapsedSeconds).ToString(@"hh\:mm\:ss");
+                    SecondaryProgress = ElapsedSeconds / SecondaryPickedDuration.TotalSeconds;
+                }
+                else
+                {
+                    SecondaryDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
+                    SecondaryProgress = 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
             }
         }
 
         public void ValidateSecondaryDurationVisibility()
         {
-            SecondaryDurationIsVisible = SecondaryPickedDuration.TotalMilliseconds != 0 ? true : false;
+            try
+            {
+                SecondaryDurationIsVisible = SecondaryPickedDuration.TotalMilliseconds != 0 ? true : false;
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void ChangeVisibility()
         {
-            FirstStepIsVisible = FirstStepIsVisible == true ? false : true;
-            SecondStepIsVisible = SecondStepIsVisible == true ? false : true;
+            try
+            {
+                FirstStepIsVisible = FirstStepIsVisible == true ? false : true;
+                SecondStepIsVisible = SecondStepIsVisible == true ? false : true;
+
+                MessagingCenter.Send(this, "StateChanged", SecondStepIsVisible);
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         public void ValidateApproveButton()
         {
-            if(MainPickedDuration.TotalMilliseconds == 0)
+            try
             {
-                ApproveIsEnabled = false;
-                return;
-            }
+                if (MainPickedDuration.TotalMilliseconds == 0)
+                {
+                    ApproveIsEnabled = false;
+                    return;
+                }
 
-            if (SecondaryPickedDuration.TotalSeconds >= MainPickedDuration.TotalSeconds)
+                if (SecondaryPickedDuration.TotalSeconds >= MainPickedDuration.TotalSeconds)
+                {
+                    ApproveIsEnabled = false;
+                    return;
+                }
+
+                ApproveIsEnabled = true;
+            }
+            catch (Exception ex)
             {
-                ApproveIsEnabled = false;
-                return;
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
             }
+        }
 
-            ApproveIsEnabled = true;
+        public void SetTimer()
+        {
+            try
+            {
+                TimerHelper = true;
+
+                Device.StartTimer(TimeSpan.FromSeconds(1), () =>
+                {
+                    ElapsedSeconds += 1;
+
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        UpdateUI(ElapsedSeconds);
+                    });
+
+                    return TimerHelper;
+                });
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
+        }
+
+        public void RefreshTimer()
+        {
+            try
+            {
+                ElapsedSeconds = Convert.ToInt32((DateTime.Now - (MainTimerEnd - TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds))).TotalSeconds);
+
+                if (ElapsedSeconds > MainPickedDuration.TotalSeconds)
+                {
+                    MainDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
+                    MainProgress = 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
         }
 
         #endregion

@@ -12,7 +12,6 @@ using Android.Content;
 using SmartTimer.ViewModels;
 using SmartTimer.Models;
 using Plugin.LocalNotification;
-using Plugin.LocalNotifications;
 
 namespace SmartTimer.Droid
 {
@@ -35,21 +34,6 @@ namespace SmartTimer.Droid
             Window.SetNavigationBarColor(Android.Graphics.Color.Black);
             NotificationCenter.CreateNotificationChannel();
 
-            MessagingCenter.Subscribe<TimerViewModel, Duration>(this, "TurnOnTimer", (sender, Duration) =>
-            {
-                TimerStart(Duration);
-            });
-
-            MessagingCenter.Subscribe<TimerViewModel, Duration>(this, "ResumeTimer", (sender, Duration) =>
-            {
-                TimerStart(Duration, true);
-            });
-            
-            MessagingCenter.Subscribe<TimerViewModel>(this, "StopTimer", (sender) =>
-            {
-                TimerHelper = false;
-            });
-
             MessagingCenter.Subscribe<TimerViewModel, NotificationRequest>(this, "NewNotification", (sender, Notification) =>
             {
                 PushNewNotification(Notification);
@@ -70,43 +54,43 @@ namespace SmartTimer.Droid
         public int ElapsedSeconds;
         public bool TimerHelper;
 
-        public void TimerStart(Duration duration, bool Resume = false)
-        {
-            if (!Resume)
-                ElapsedSeconds = 0;
+        //public void TimerStart(Duration duration, bool Resume = false)
+        //{
+        //    if (!Resume)
+        //        ElapsedSeconds = 0;
+         
+        //    TimerHelper = true;
+        //    bool SecondaryNotificationSend = false;
+        //    bool MainNotificationSend = false;
+        //    bool StrikeSecondaryAlarm = true;
 
-            TimerHelper = true;
-            bool SecondaryNotificationSend = false;
-            bool MainNotificationSend = false;
-            bool StrikeSecondaryAlarm = true;
+        //    if (Resume && duration.SecondaryDuration <= ElapsedSeconds)
+        //        StrikeSecondaryAlarm = false;
 
-            if (Resume && duration.SecondaryDuration <= ElapsedSeconds)
-                StrikeSecondaryAlarm = false;
+        //    Device.StartTimer(TimeSpan.FromSeconds(1), () =>
+        //    {
+        //        ElapsedSeconds += 1;
 
-            Device.StartTimer(TimeSpan.FromSeconds(1), () =>
-            {
-                ElapsedSeconds += 1;
+        //        Device.BeginInvokeOnMainThread(() =>
+        //        {
+        //            MessagingCenter.Send(Xamarin.Forms.Application.Current, "ElapsedSeconds", ElapsedSeconds);
+        //        });
 
-                Device.BeginInvokeOnMainThread(() =>
-                {
-                    MessagingCenter.Send(Xamarin.Forms.Application.Current, "ElapsedSeconds", ElapsedSeconds);
-                });
+        //        if (ElapsedSeconds >= duration.SecondaryDuration && !SecondaryNotificationSend && !duration.Single && StrikeSecondaryAlarm)
+        //        {
+        //            SecondaryNotificationSend = true;
+        //            MessagingCenter.Send(Xamarin.Forms.Application.Current, "SecondaryTimerEnded");
+        //        }
 
-                if (ElapsedSeconds >= duration.SecondaryDuration && !SecondaryNotificationSend && !duration.Single && StrikeSecondaryAlarm)
-                {
-                    SecondaryNotificationSend = true;
-                    MessagingCenter.Send(Xamarin.Forms.Application.Current, "SecondaryTimerEnded");
-                }
+        //        if (ElapsedSeconds >= duration.MainDuration && !MainNotificationSend)
+        //        {
+        //            TimerHelper = false;
+        //            MainNotificationSend = true;
+        //            MessagingCenter.Send(Xamarin.Forms.Application.Current, "MainTimerEnded");
+        //        }
 
-                if (ElapsedSeconds >= duration.MainDuration && !MainNotificationSend)
-                {
-                    TimerHelper = false;
-                    MainNotificationSend = true;
-                    MessagingCenter.Send(Xamarin.Forms.Application.Current, "MainTimerEnded");
-                }
-
-                return TimerHelper;
-            });
-        }
+        //        return TimerHelper;
+        //    });
+        //}
     }
 }

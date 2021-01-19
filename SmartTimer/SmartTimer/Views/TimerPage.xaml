@@ -5,18 +5,7 @@
              xmlns:vm="clr-namespace:SmartTimer.ViewModels"
              BackgroundColor="#121212"
              Title="Minutnik">
-    <!--<ContentPage.Resources>
-        <Style x:Key="buttonStyle" TargetType="Button">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Background" Value="#3399ff"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Style.Triggers>
-                <Trigger TargetType="Button" Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#cc00cc"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </ContentPage.Resources>-->
+
     <ContentPage.BindingContext>
         <vm:TimerViewModel />
     </ContentPage.BindingContext>

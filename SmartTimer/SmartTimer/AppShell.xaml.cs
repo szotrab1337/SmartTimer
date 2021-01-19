@@ -13,6 +13,11 @@ namespace SmartTimer
             InitializeComponent();
 
             this.CurrentItem.CurrentItem = timerPage;
+
+            MessagingCenter.Subscribe<TemplatesViewModel>(this, "SwitchToTimerPage", (sender) =>
+            {
+                this.CurrentItem.CurrentItem = timerPage;
+            });
         }
     }
 }

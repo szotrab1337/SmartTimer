@@ -57,8 +57,8 @@
     <PackageReference Include="Plugin.LocalNotification">
       <Version>4.1.4</Version>
     </PackageReference>
-    <PackageReference Include="Xam.Plugins.Notifier">
-      <Version>3.0.1</Version>
+    <PackageReference Include="sqlite-net-pcl">
+      <Version>1.7.335</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.Forms" Version="4.8.0.1821" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.0" />
@@ -114,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\icon_settings.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\icon_add.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ProjectExtensions>

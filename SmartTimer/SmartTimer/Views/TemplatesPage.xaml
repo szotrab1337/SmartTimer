@@ -4,17 +4,63 @@
              x:Class="SmartTimer.Views.TemplatesPage"
              xmlns:vm="clr-namespace:SmartTimer.ViewModels"
              BackgroundColor="#121212"
-             Title="Szablony">
-    
-    <ContentPage.BindingContext>
-        <vm:TemplatesViewModel />
-    </ContentPage.BindingContext>
+             Title="Szablony"
+             x:Name="TemplatesViewModel">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem IconImageSource="icon_add.png" Command="{Binding Path=BindingContext.AddCommand, Source={x:Reference TemplatesViewModel}}"/>
+    </ContentPage.ToolbarItems>
+    
     <ContentPage.Content>
-        <StackLayout>
-            <Label Text="Welcome to Xamarin.Forms!"
-                VerticalOptions="CenterAndExpand" 
-                HorizontalOptions="CenterAndExpand" />
+        <StackLayout Margin="10,10,10,10">
+            <ListView ItemsSource="{Binding Templates, Mode=TwoWay}" SelectionMode="None" RowHeight="130" SeparatorVisibility="None">
+
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <ContentView Padding="5">
+                                <Frame Padding="10" BackgroundColor="#272727">
+                                    <StackLayout Orientation="Horizontal">
+                                        <StackLayout VerticalOptions="Center" Margin="0,0,10,0">
+                                            <Label Text="{Binding Number}" FontSize="60" TextColor="White" Opacity="0.60"/>
+                                        </StackLayout>
+                                        <StackLayout Orientation="Vertical">
+                                            <Label Text="{Binding Name}" FontSize="20" TextColor="White" Opacity="0.87"/>
+                                            <StackLayout Orientation="Horizontal">
+                                                <Label Text="Czas podstawowy: " FontSize="13" TextColor="White" Opacity="0.67" FontAttributes="Italic"/>
+                                                <Label Text="{Binding FirstStepDurationFormated}" FontSize="13" TextColor="White" Opacity="0.67" FontAttributes="Italic"/>
+                                            </StackLayout>
+                                            <StackLayout Orientation="Horizontal">
+                                                <Label Text="Czas pośredni: " FontSize="13" TextColor="White" Opacity="0.67" FontAttributes="Italic"/>
+                                                <Label Text="{Binding SecondStepDurationFormated}" TextColor="White" Opacity="0.67" FontAttributes="Italic"/>
+                                            </StackLayout>
+                                            <StackLayout Orientation="Horizontal">
+                                                <Label Text="Ilość użyć: " FontSize="13" TextColor="White" Opacity="0.67" FontAttributes="Italic"/>
+                                                <Label Text="{Binding NumberOfUses}" FontSize="13" TextColor="White" Opacity="0.67" FontAttributes="Italic"/>
+                                            </StackLayout>
+                                        </StackLayout>
+                                    </StackLayout>
+                                </Frame>
+                                <ContentView.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Path=BindingContext.ClickCommand, Source={x:Reference TemplatesViewModel}}" 
+                                          NumberOfTapsRequired="2"
+                                          CommandParameter="{Binding .}"/>
+                                </ContentView.GestureRecognizers>
+                            </ContentView>
+                            <ViewCell.ContextActions>
+                                <MenuItem Text="Edytuj"
+                                          Command="{Binding Path=BindingContext.EditCommand, Source={x:Reference TemplatesViewModel}}"
+                                          IsDestructive="True"
+                                          CommandParameter="{Binding .}"/>
+                                <MenuItem Text="Usuń"
+                                          Command="{Binding Path=BindingContext.DeleteCommand, Source={x:Reference TemplatesViewModel}}"
+                                          IsDestructive="True"
+                                          CommandParameter="{Binding .}"/>
+                            </ViewCell.ContextActions>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
         </StackLayout>
     </ContentPage.Content>
 

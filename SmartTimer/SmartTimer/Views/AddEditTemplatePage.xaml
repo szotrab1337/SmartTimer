@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SmartTimer.Views.AddEditTemplatePage"
+             BackgroundColor="#121212"
+             Title="Nowy szablon">
+    <ContentPage.Content>
+        
+        <StackLayout VerticalOptions="FillAndExpand" Margin="10,10,10,10">
+            <StackLayout VerticalOptions="CenterAndExpand" Spacing="40">
+                <StackLayout Spacing="10">
+                    <Label Text="Nazwa" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                    <Entry Text="{Binding TemplateName}" FontSize="25" HorizontalTextAlignment="Center" TextColor="White" Opacity="0.87" Margin="10,0,10,0"/>
+                </StackLayout>
+                <StackLayout Spacing="10">
+                    <Label Text="Całkowity czas" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                    <TimePicker Time="{Binding MainPickedDuration}" HorizontalOptions="CenterAndExpand" FontSize="45" Opacity="0.87"  />
+                </StackLayout>
+
+                <StackLayout Spacing="10">
+                    <Label Text="Przystanek po" FontSize="30" HorizontalOptions="Center" TextColor="White" Opacity="0.87"/>
+                    <TimePicker Time="{Binding SecondaryPickedDuration}" HorizontalOptions="CenterAndExpand" FontSize="45" Opacity="0.87" />
+                </StackLayout>
+            </StackLayout>
+
+            <StackLayout VerticalOptions="EndAndExpand">
+                <StackLayout.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#272727"/>
+                        <Style.Triggers>
+                            <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#272727"/>
+                                <Setter Property="TextColor" Value="#666666"/>
+                            </Trigger>
+                            <Trigger TargetType="Button" Property="IsEnabled" Value="True">
+                                <Setter Property="Background" Value="#272727"/>
+                                <Setter Property="TextColor" Value="White"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackLayout.Resources>
+                <Button BackgroundColor="#272727" Text="Zapisz" Grid.Column="2" CornerRadius="30"  Margin="30,0,30,0" Command="{Binding SaveTemplateCommand}" IsEnabled="{Binding SaveButtonIsEnabled}" />
+            </StackLayout>
+        </StackLayout>
+
+    </ContentPage.Content>
+</ContentPage>
