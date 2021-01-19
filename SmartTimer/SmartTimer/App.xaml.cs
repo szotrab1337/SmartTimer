@@ -1,14 +1,11 @@
-﻿using Acr.UserDialogs;
-using SmartTimer.Models;
+﻿using SmartTimer.Models;
 using SmartTimer.ViewModels;
-using SmartTimer.Views;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
 
 namespace SmartTimer
 {
@@ -38,6 +35,8 @@ namespace SmartTimer
         {
             MessagingCenter.Subscribe<TimerViewModel, Duration>(this, "SetAlarms", (sender, Duration) =>
             {
+                this.Duration = Duration;
+
                 if (!Duration.Single)
                     SetSecondaryAlarm(Duration.SecondaryDuration);    
 
@@ -52,7 +51,7 @@ namespace SmartTimer
                     MainToken.Dispose();
                 }
 
-                if (SecondaryToken != null)
+                if (SecondaryToken.Token != null)
                 {
                     SecondaryToken.Cancel();
                     SecondaryToken.Dispose();
@@ -62,12 +61,12 @@ namespace SmartTimer
 
         protected override void OnSleep()
         {
-           
+
         }
 
         protected override void OnResume()
         {
-            if (MainToken != null)
+            //if (MainToken != null)
                 MessagingCenter.Send(this, "RefreshTimer");
         }
 
@@ -89,7 +88,10 @@ namespace SmartTimer
             SecondaryAlarm = Task.Factory.StartNew(() =>
             {
                 Task.Delay(TimeSpan.FromSeconds(seconds), SecondaryToken.Token).Wait();
+                //Thread.Sleep(TimeSpan.FromSeconds(seconds));
+
                 MessagingCenter.Send(this, "SecondaryTimerEnded");
+
             }, SecondaryToken.Token);
         }
 
@@ -97,5 +99,6 @@ namespace SmartTimer
         private Task SecondaryAlarm;
         private CancellationTokenSource MainToken;
         private CancellationTokenSource SecondaryToken;
+        private Duration Duration { get; set; }
     }
 }
