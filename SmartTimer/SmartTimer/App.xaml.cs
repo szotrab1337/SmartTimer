@@ -67,51 +67,30 @@ namespace SmartTimer
 
         protected override void OnResume()
         {
-            try
-            {
-                if (MainToken != null)
-                    MessagingCenter.Send(this, "RefreshTimer");
-            }
-            catch (Exception ex)
-            {
-                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
-            }
+            if (MainToken != null)
+                MessagingCenter.Send(this, "RefreshTimer");
         }
 
         private void SetMainAlarm(double seconds)
         {
-            try
-            {
-                MainToken = new CancellationTokenSource();
+            MainToken = new CancellationTokenSource();
 
-                MainAlarm = Task.Factory.StartNew(() =>
-                {
-                    Task.Delay(TimeSpan.FromSeconds(seconds), MainToken.Token).Wait();
-                    MessagingCenter.Send(this, "MainTimerEnded");
-                }, MainToken.Token);
-            }
-            catch (Exception ex)
+            MainAlarm = Task.Factory.StartNew(() =>
             {
-                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
-            }
+                Task.Delay(TimeSpan.FromSeconds(seconds), MainToken.Token).Wait();
+                MessagingCenter.Send(this, "MainTimerEnded");
+            }, MainToken.Token);
         }
-        
+
         private void SetSecondaryAlarm(double seconds)
         {
-            try
-            {
-                SecondaryToken = new CancellationTokenSource();
+            SecondaryToken = new CancellationTokenSource();
 
-                SecondaryAlarm = Task.Factory.StartNew(() =>
-                {
-                    Task.Delay(TimeSpan.FromSeconds(seconds), SecondaryToken.Token).Wait();
-                    MessagingCenter.Send(this, "SecondaryTimerEnded");
-                }, SecondaryToken.Token);
-            }
-            catch (Exception ex)
+            SecondaryAlarm = Task.Factory.StartNew(() =>
             {
-                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
-            }
+                Task.Delay(TimeSpan.FromSeconds(seconds), SecondaryToken.Token).Wait();
+                MessagingCenter.Send(this, "SecondaryTimerEnded");
+            }, SecondaryToken.Token);
         }
 
         private Task MainAlarm;
