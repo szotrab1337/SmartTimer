@@ -61,7 +61,7 @@ namespace SmartTimer.ViewModels
             {
                 if(Template != null)
                 {
-                    Template.Name = TemplateName;
+                    Template.Name = char.ToUpper(TemplateName[0]) + TemplateName.Substring(1);
                     Template.FirstStepDurationSec = Convert.ToInt32(MainPickedDuration.TotalSeconds);
                     Template.SecondStepDurationSec = Convert.ToInt32(SecondaryPickedDuration.TotalSeconds);
 
@@ -71,7 +71,7 @@ namespace SmartTimer.ViewModels
                 {
                     await App.Database.AddNewTemplate(new Template
                     {
-                        Name = TemplateName,
+                        Name = char.ToUpper(TemplateName[0]) + TemplateName.Substring(1),
                         FirstStepDurationSec = Convert.ToInt32(MainPickedDuration.TotalSeconds),
                         SecondStepDurationSec = Convert.ToInt32(SecondaryPickedDuration.TotalSeconds),
                         NumberOfUses = 0

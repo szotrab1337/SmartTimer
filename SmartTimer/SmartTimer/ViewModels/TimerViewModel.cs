@@ -30,8 +30,8 @@ namespace SmartTimer.ViewModels
             EndButtonIsVisible = false;
             StopButtonIsVisible = true;
             ResumeButtonIsVisible = false;
-            MainDuration = TimeSpan.FromMilliseconds(0).ToString(@"hh\:mm\:ss\:fff");
-            SecondaryDuration = TimeSpan.FromMilliseconds(0).ToString(@"hh\:mm\:ss\:fff");
+            MainDuration = TimeSpan.FromMilliseconds(0).ToString(@"hh\:mm\:ss");
+            SecondaryDuration = TimeSpan.FromMilliseconds(0).ToString(@"hh\:mm\:ss");
             MainProgress = 0;
             SecondaryProgress = 0;
 
@@ -49,26 +49,24 @@ namespace SmartTimer.ViewModels
 
             #region Messenger
 
-            MessagingCenter.Subscribe<App>(this, "SecondaryTimerEnded", (sender) =>
+            MessagingCenter.Subscribe<App>(this, "RefreshUI", (sender) =>
             {
-                EndSecondaryTimer();
-            });
-
-            MessagingCenter.Subscribe<App>(this, "MainTimerEnded", (sender) =>
-            {
-                TimerHelper = false;
-                ChangeButtonsVisibility();
-                EndMainTimer();
+                RefreshTimer();
             });
 
             MessagingCenter.Subscribe<TemplatesViewModel, Template>(this, "NewTimerFromTemplate", (sender, Template) =>
             {
                 TimerFromTemplate(Template);
             });
-
-            MessagingCenter.Subscribe<App>(this, "RefreshTimer", (sender) =>
+            
+            MessagingCenter.Subscribe<Xamarin.Forms.Application>(Xamarin.Forms.Application.Current, "SecondaryAlarmTriggered", (sender) =>
             {
-                RefreshTimer();
+                EndSecondaryTimer();
+            });
+            
+            MessagingCenter.Subscribe<Xamarin.Forms.Application>(Xamarin.Forms.Application.Current, "MainAlarmTriggered", (sender) =>
+            {
+                EndMainTimer();
             });
 
             #endregion
@@ -112,21 +110,7 @@ namespace SmartTimer.ViewModels
             get { return _MainPickedDuration; }
             set { _MainPickedDuration = value; OnPropertyChanged("MainPickedDuration"); ValidateApproveButton(); }
         }
-        private TimeSpan _MainPickedDuration;
-        
-        public DateTime MainTimerEnd
-        {
-            get { return _MainTimerEnd; }
-            set { _MainTimerEnd = value; OnPropertyChanged("MainTimerEnd"); }
-        }
-        private DateTime _MainTimerEnd;
-        
-        public DateTime PauseDateTime
-        {
-            get { return _PauseDateTime; }
-            set { _PauseDateTime = value; OnPropertyChanged("PauseDateTime"); }
-        }
-        private DateTime _PauseDateTime;
+        private TimeSpan _MainPickedDuration;      
 
         public TimeSpan SecondaryPickedDuration
         {
@@ -218,6 +202,20 @@ namespace SmartTimer.ViewModels
             set { _SecondaryNotificationSend = value; OnPropertyChanged("SecondaryNotificationSend"); }
         }
         private bool _SecondaryNotificationSend;
+        
+        public DateTime PauseDateTime
+        {
+            get { return _PauseDateTime; }
+            set { _PauseDateTime = value; OnPropertyChanged("PauseDateTime"); }
+        }
+        private DateTime _PauseDateTime;
+        
+        public DateTime MainTimerEnd
+        {
+            get { return _MainTimerEnd; }
+            set { _MainTimerEnd = value; OnPropertyChanged("MainTimerEnd"); }
+        }
+        private DateTime _MainTimerEnd;
 
         public Ringtone Ringtone { get; set; }
         public Vibrator Vibrator { get; set; }
@@ -230,13 +228,21 @@ namespace SmartTimer.ViewModels
         {
             try
             {
-                ElapsedSeconds = 0;
-                SetTimer();
-                ChangeVisibility();
-                ValidateSecondaryDurationVisibility();
-                SetAlarms();
+                Duration Duration = new Duration
+                {
+                    MainDuration = MainPickedDuration.TotalSeconds,
+                    SecondaryDuration = SecondaryPickedDuration.TotalSeconds,
+                    Single = SecondaryPickedDuration.TotalSeconds == 0 ? true : false
+                };
+
+                MessagingCenter.Instance.Send(this, "SetAlarm", Duration);
+                ChangeStepVisibility();
+                ChangeSecondaryTimerVisibility();
+                PrepareView();
 
                 MainTimerEnd = DateTime.Now.Add(TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds));
+                ElapsedSeconds = 0;
+                SetTimer();
             }
             catch (Exception ex)
             {
@@ -263,9 +269,9 @@ namespace SmartTimer.ViewModels
                 ResumeButtonIsVisible = false;
                 TimerHelper = false;
 
-                MessagingCenter.Instance.Send(this, "CancelAlarms");
+                MessagingCenter.Instance.Send(this, "CancelAlarm");
 
-                ChangeVisibility();
+                ChangeStepVisibility();
             }
             catch (Exception ex)
             {
@@ -279,15 +285,15 @@ namespace SmartTimer.ViewModels
             {
                 TimerHelper = false;
                 ChangeStopResumeButtonsVisibility();
-                MessagingCenter.Instance.Send(this, "CancelAlarms");
-
                 PauseDateTime = DateTime.Now;
+
+                MessagingCenter.Instance.Send(this, "CancelAlarm");
             }
             catch (Exception ex)
             {
                 UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
             }
-}
+        }
 
         public void ResumeAction()
         {
@@ -296,8 +302,6 @@ namespace SmartTimer.ViewModels
                 SetTimer();
                 ChangeStopResumeButtonsVisibility();
                 AlarmsResume();
-
-                MainTimerEnd = MainTimerEnd.AddSeconds((DateTime.Now - PauseDateTime).TotalSeconds);
             }
             catch (Exception ex)
             {
@@ -320,35 +324,6 @@ namespace SmartTimer.ViewModels
             }
         }
 
-        public void SetAlarms()
-        {
-            try
-            {
-                MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
-
-                if (SecondaryDurationIsVisible)
-                {
-                    SecondaryDuration = TimeSpan.FromSeconds(SecondaryPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
-                    SecondaryProgress = 0;
-                }
-
-                MainProgress = 0;
-
-                Duration Duration = new Duration
-                {
-                    MainDuration = MainPickedDuration.TotalSeconds,
-                    SecondaryDuration = SecondaryPickedDuration.TotalSeconds,
-                    Single = SecondaryDurationIsVisible ? false : true
-                };
-
-                MessagingCenter.Send(this, "SetAlarms", Duration);
-            }
-            catch (Exception ex)
-            {
-                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
-            }
-        }
-
         public void AlarmsResume()
         {
             try
@@ -360,7 +335,7 @@ namespace SmartTimer.ViewModels
                     Single = SecondaryDurationIsVisible ? false : true
                 };
 
-                MessagingCenter.Send(this, "SetAlarms", Duration);
+                MessagingCenter.Send(this, "SetAlarm", Duration);
             }
             catch (Exception ex)
             {
@@ -372,6 +347,7 @@ namespace SmartTimer.ViewModels
         {
             try
             {
+                ChangeButtonsVisibility();
                 MainDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
                 MainProgress = 1;
 
@@ -406,7 +382,7 @@ namespace SmartTimer.ViewModels
                 };
                 MessagingCenter.Instance.Send(this, "NewNotification", Notification);
 
-                Vibration.Vibrate(5000);
+                Vibration.Vibrate(3000);
             }
             catch (Exception ex)
             {
@@ -441,8 +417,9 @@ namespace SmartTimer.ViewModels
                 Ringtone.Stop();
                 Ringtone.Dispose();
 
+                TimerHelper = false;
                 ChangeButtonsVisibility();
-                ChangeVisibility();
+                ChangeStepVisibility();
             }
             catch (Exception ex)
             {
@@ -480,8 +457,16 @@ namespace SmartTimer.ViewModels
         {
             try
             {
-                MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds - ElapsedSeconds).ToString(@"hh\:mm\:ss");
-                MainProgress = ElapsedSeconds / MainPickedDuration.TotalSeconds;
+                if (ElapsedSeconds < MainPickedDuration.TotalSeconds)
+                {
+                    MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds - ElapsedSeconds).ToString(@"hh\:mm\:ss");
+                    MainProgress = ElapsedSeconds / MainPickedDuration.TotalSeconds;
+                }
+                else
+                {
+                    MainDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
+                    MainProgress = 1;
+                }
 
                 if (SecondaryDurationIsVisible && ElapsedSeconds < SecondaryPickedDuration.TotalSeconds)
                 {
@@ -500,7 +485,7 @@ namespace SmartTimer.ViewModels
             }
         }
 
-        public void ValidateSecondaryDurationVisibility()
+        public void ChangeSecondaryTimerVisibility()
         {
             try
             {
@@ -512,7 +497,7 @@ namespace SmartTimer.ViewModels
             }
         }
 
-        public void ChangeVisibility()
+        public void ChangeStepVisibility()
         {
             try
             {
@@ -544,6 +529,25 @@ namespace SmartTimer.ViewModels
                 }
 
                 ApproveIsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                UserDialogs.Instance.Alert("Bład!\r\n\r\n" + ex.ToString(), "Błąd", "OK");
+            }
+        }
+
+        public void PrepareView()
+        {
+            try
+            {
+                MainDuration = TimeSpan.FromSeconds(MainPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
+                MainProgress = 0;
+
+                if (SecondaryDurationIsVisible)
+                {
+                    SecondaryDuration = TimeSpan.FromSeconds(SecondaryPickedDuration.TotalSeconds).ToString(@"hh\:mm\:ss");
+                    SecondaryProgress = 0;
+                }
             }
             catch (Exception ex)
             {
@@ -585,6 +589,13 @@ namespace SmartTimer.ViewModels
                 {
                     MainDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
                     MainProgress = 1;
+                    TimerHelper = false;
+                }
+                
+                if (ElapsedSeconds > SecondaryPickedDuration.TotalSeconds)
+                {
+                    SecondaryDuration = TimeSpan.FromSeconds(0).ToString(@"hh\:mm\:ss");
+                    SecondaryProgress = 1;
                 }
             }
             catch (Exception ex)
